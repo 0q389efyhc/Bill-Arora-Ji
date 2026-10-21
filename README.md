@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Arora Road Carrier — Transport Bill
 
 Streamlit app that matches the paper GR form. Every bill is saved in SQLite and can be downloaded again as PDF.
