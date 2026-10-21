@@ -19,8 +19,8 @@ FONT_DIR = ROOT / "fonts"
 
 pdfmetrics.registerFont(TTFont("Sans", str(FONT_DIR / "NotoSans-Regular.ttf")))
 pdfmetrics.registerFont(TTFont("Sans-Bold", str(FONT_DIR / "NotoSans-Bold.ttf")))
-pdfmetrics.registerFont(TTFont("Hi", str(FONT_DIR / "NotoSansDevanagari-Regular.ttf")))
-pdfmetrics.registerFont(TTFont("Hi-Bold", str(FONT_DIR / "NotoSansDevanagari-Bold.ttf")))
+pdfmetrics.registerFont(TTFont("Hi", str(FONT_DIR / "NotoSansDevanagari-Regular.ttf"), shapable=True))
+pdfmetrics.registerFont(TTFont("Hi-Bold", str(FONT_DIR / "NotoSansDevanagari-Bold.ttf"), shapable=True))
 
 COMPANY = {
     "name": "ARORA ROAD CARRIER",
@@ -29,7 +29,7 @@ COMPANY = {
     "pan": "ALUPK7249J",
     "mob1": "98292 45536",
     "mob2": "8209137649",
-    "blessing": "|| श्री गणेशाय नमः ||",
+    "blessing": "॥ श्री गणेशाय नमः ॥",
     "jurisdiction": "All Subject to Chittorgarh Jurisdiction Only",
     "bank": "IDBI Bank, Chittorgarh (Raj.)",
     "ac": "111102000010423",
