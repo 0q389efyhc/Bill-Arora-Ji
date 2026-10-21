@@ -149,7 +149,7 @@ def pdf_for(data):
     c.setFont("Sans", 8)
     c.drawString(m + 8, top, f"PAN No. {COMPANY['pan']}")
     c.setFont("Hi", 9)
-    c.drawCentredString(w / 2, top, COMPANY["blessing"])
+    c.drawCentredString(w / 2, top, COMPANY["blessing"], shaping=True)
     c.setFont("Sans", 8)
     c.drawRightString(w - m - 8, top, f"Mob. {COMPANY['mob1']}")
     c.drawRightString(w - m - 8, top - 10, COMPANY["mob2"])
@@ -498,12 +498,51 @@ with tab_new:
     }
 
     if st.button("Generate Bill", type="primary"):
-        if not data["gr_no"]:
-            st.error("GR No. is required.")
-        elif not data["value_of_goods"]:
-            st.error("Enter the value of goods.")
-        elif get_bill(data["gr_no"]):
-            st.error("This GR No. is already generated. Change the GR number.")
+        errors = []
+        required_fields = {
+            "GR No.": data["gr_no"],
+            "Consignor name": data["consignor_name"],
+            "Consignor address": data["consignor_addr"],
+            "Consignor GSTIN": data["consignor_gstin"],
+            "Consignee name": data["consignee_name"],
+            "Consignee address": data["consignee_addr"],
+            "Consignee GSTIN": data["consignee_gstin"],
+            "From place": data["from_place"],
+            "To place": data["to_place"],
+            "Value of goods": data["value_of_goods"],
+            "Truck No.": data["truck_no"],
+            "Goods note": data["note_goods"],
+        }
+        for label, value in required_fields.items():
+            if not str(value or "").strip():
+                errors.append(f"{label} is required.")
+
+        if not consignee_sign:
+            errors.append("Consignee signature is required.")
+        if not other_sign:
+            errors.append("Authorised / other signature is required.")
+        if not clean:
+            errors.append("Add at least one package/item row.")
+        else:
+            for i, row in enumerate(clean, start=1):
+                if not str(row.get("packages") or "").strip():
+                    errors.append(f"Package row {i}: No. of Package is required.")
+                if not str(row.get("contains") or "").strip():
+                    errors.append(f"Package row {i}: Contains is required.")
+                if num(row.get("weight")) <= 0:
+                    errors.append(f"Package row {i}: Weight must be greater than 0.")
+                if num(row.get("rate")) <= 0:
+                    errors.append(f"Package row {i}: Rate must be greater than 0.")
+                if row.get("advance") is None or str(row.get("advance")).strip() == "":
+                    errors.append(f"Package row {i}: Advance is required (enter 0 if none).")
+
+        if get_bill(data["gr_no"]):
+            errors.append("This GR No. already exists. Change the GR number.")
+
+        if errors:
+            st.error("Please complete all required fields before generating the bill:")
+            for error in errors:
+                st.warning(error)
         else:
             pdf_bytes = pdf_for(data)
             (PDF_DIR / f"GR-{data['gr_no']}.pdf").write_bytes(pdf_bytes)
