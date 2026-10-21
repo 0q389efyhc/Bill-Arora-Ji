@@ -269,19 +269,26 @@ def pdf_for(data):
         c.setFont("Sans-Bold", 9)
         c.drawString(contains_x + 92, footer_top + 18, "X")
 
-    # total row starts after the Contains column so it does not cut the GST block
+    # Total row: keep the "Total" label in the Contains column, not
+    # in the Weight column, so it cannot overlap the total weight.
+    total_y = footer_top + 4
     c.line(xs[2], footer_top + 14, w - m, footer_top + 14)
     c.setFont("Sans-Bold", 8)
-    c.drawCentredString(xs[2] + cols[2] / 2, footer_top + 4, "Total")
-    totals = [
-        data.get("total_weight") or "",
-        "",
-        f"{data['total_freight']:.2f}" if data["total_freight"] else "",
-        f"{data['total_advance']:.2f}" if data["total_advance"] else "",
-        f"{data['total_balance']:.2f}" if data["total_balance"] else "",
-    ]
-    for i, val in enumerate(totals):
-        c.drawCentredString(xs[i + 2] + cols[i + 2] / 2, footer_top + 4, val)
+    c.drawCentredString(xs[1] + cols[1] / 2, total_y, "Total")
+
+    # Each total is drawn only in its matching column.
+    total_values = {
+        2: data.get("total_weight") or "",  # Weight (MT)
+        4: f"{data['total_freight']:.2f}" if data["total_freight"] else "",
+        5: f"{data['total_advance']:.2f}" if data["total_advance"] else "",
+        6: f"{data['total_balance']:.2f}" if data["total_balance"] else "",
+    }
+    for col_index, value in total_values.items():
+        c.drawCentredString(
+            xs[col_index] + cols[col_index] / 2,
+            total_y,
+            str(value)[:18],
+        )
 
     c.setFont("Hi", 7)
     note = data.get("note_goods") or "______________"
@@ -396,7 +403,7 @@ with tab_new:
     edited = st.data_editor(
         st.session_state.lines,
         num_rows="dynamic",
-        use_container_width=True,
+        width='stretch',
         column_config={
             "packages": "No. of Package",
             "contains": "Contains",
@@ -439,7 +446,7 @@ with tab_new:
         st.dataframe(
             [{"Contains": r["contains"], "MT": r["weight"], "Rate": r["rate"],
               "Freight": r["freight"], "Advance": r["advance"], "Balance": r["balance"]} for r in clean],
-            use_container_width=True, hide_index=True,
+            width='stretch', hide_index=True,
         )
     m1, m2, m3 = st.columns(3)
     m1.metric("Total freight", f"{tf:,.2f}")
@@ -512,7 +519,7 @@ with tab_hist:
             "GR": r["gr_no"], "Date": r["bill_date"], "Consignor": r["consignor_name"],
             "Consignee": r["consignee_name"], "From": r["from_place"], "To": r["to_place"],
             "Truck": r["truck_no"], "Balance": r["total_balance"], "Saved": r["created_at"],
-        } for r in rows], use_container_width=True, hide_index=True)
+        } for r in rows], width='stretch', hide_index=True)
         pick = st.selectbox("Open a saved bill", [r["gr_no"] for r in rows])
         bill = get_bill(pick)
         if bill:
