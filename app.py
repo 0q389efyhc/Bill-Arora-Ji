@@ -111,6 +111,15 @@ def get_bill(gr_no):
     with conn() as c:
         return c.execute("SELECT * FROM bills WHERE gr_no = ?", (gr_no,)).fetchone()
 
+
+def delete_bill(gr_no):
+    """Delete one saved bill from the database."""
+    with conn() as c:
+        c.execute("DELETE FROM bills WHERE gr_no = ?", (gr_no,))
+    pdf_path = PDF_DIR / f"GR-{gr_no}.pdf"
+    if pdf_path.exists():
+        pdf_path.unlink()
+
 def show_pdf(pdf_bytes, height=640):
     b64 = base64.b64encode(pdf_bytes).decode()
     st.markdown(
@@ -509,7 +518,25 @@ with tab_new:
         st.download_button("Download PDF", data=generated["pdf"], file_name=f"GR-{generated['gr']}.pdf", mime="application/pdf")
         show_pdf(generated["pdf"])
 
+@st.dialog("Confirm deletion")
+def confirm_delete_dialog(gr_no):
+    st.warning(f"Are you sure you want to permanently delete GR {gr_no}? This cannot be undone.")
+    confirm_col, cancel_col = st.columns(2)
+    if confirm_col.button("Yes, delete", type="primary", key=f"confirm-delete-{gr_no}"):
+        delete_bill(gr_no)
+        if st.session_state.get("view_gr") == gr_no:
+            st.session_state.pop("view_gr", None)
+        st.session_state.pop("pending_delete_gr", None)
+        st.success(f"GR {gr_no} deleted.")
+        st.rerun()
+    if cancel_col.button("Cancel", key=f"cancel-delete-{gr_no}"):
+        st.session_state.pop("pending_delete_gr", None)
+        st.rerun()
+
+
 with tab_hist:
+    if st.session_state.get("pending_delete_gr"):
+        confirm_delete_dialog(st.session_state.pending_delete_gr)
     q = st.text_input("Search GR, party, place or truck")
     rows = list_bills(q.strip())
     if not rows:
@@ -535,6 +562,9 @@ with tab_hist:
                 pdf_bytes = pdf_for(old)
                 path.write_bytes(pdf_bytes)
             st.download_button(f"Download GR {pick} PDF", data=pdf_bytes, file_name=f"GR-{pick}.pdf", mime="application/pdf", key=f"dl-{pick}")
+            if st.button(f"Delete GR {pick}", key=f"delete-{pick}", type="secondary"):
+                st.session_state.pending_delete_gr = pick
+                confirm_delete_dialog(pick)
             if st.button("View online", key=f"view-{pick}"):
                 st.session_state.view_gr = pick
             if st.session_state.get("view_gr") == pick:
